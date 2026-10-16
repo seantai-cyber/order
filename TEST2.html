@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鴻海商品快速結帳 RWD＋訂購者資料與交易排序預覽版 v13</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f6f8;color:#20252b;font-family:"Microsoft JhengHei",Arial,sans-serif}
+.app{max-width:1450px;margin:auto;padding:18px}
+.topbar{background:#fff;border-radius:12px;padding:15px 18px;box-shadow:0 2px 10px #00000012;margin-bottom:14px}
+.topline{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.buyer-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+.buyer-field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.line-invoice-option{display:flex!important;flex-direction:row;align-items:center;gap:7px;margin-top:3px;font-weight:600!important;cursor:pointer}.line-invoice-option input{width:16px;height:16px;accent-color:#1677d2;cursor:pointer}
+.buyer-field label{font-size:14px;font-weight:700;color:#4d5962}
+.buyer-input{width:100%;padding:10px 12px;border:1px solid #c8cdd2;border-radius:7px;font-size:16px;min-width:0}
+.buyer-input:focus{outline:none;border-color:#11698a}
+h1{font-size:22px;margin:0 10px 0 0}\n.order-serial{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:8px;font-weight:1000;font-size:22px;letter-spacing:.5px;background:#e6f5fb;color:#075b7a;border:2px solid #9ed7e9;white-space:nowrap}\nbody.dark .order-serial{background:#263b4b;color:#8ee1ff;border-color:#3d7088;font-weight:1000}
+input,button{font-family:inherit}
+.flow{padding:10px 12px;border:1px solid #c8cdd2;border-radius:7px;font-size:16px;width:150px}
+.btn{border:0;border-radius:7px;padding:10px 16px;cursor:pointer;font-size:15px}
+.btn-dark{background:#425466;color:#fff}
+.btn-main{background:#11698a;color:#fff}
+.btn-danger{background:#b33a3a;color:#fff}
+.search{flex:1;min-width:280px;padding:12px 15px;border:2px solid #11698a;border-radius:8px;font-size:17px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px}
+.panel{background:#fff;border-radius:12px;padding:15px;box-shadow:0 2px 10px #0000000c}
+.categories{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.cat{background:#edf1f4;color:#34404a;border:1px solid #d5dbe0;border-radius:18px;padding:8px 14px;cursor:pointer}
+.cat.active{background:#11698a;color:#fff;border-color:#11698a}
+.stats{font-size:13px;color:#69727b;margin-bottom:10px}
+.grid{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:10px}
+.product{border:2px solid #e0e5e8;background:#fff;border-radius:10px;padding:11px;text-align:left;cursor:pointer;min-height:115px;transition:.12s}
+.product:hover{border-color:#11698a;transform:translateY(-1px)}
+.product.selected{border-color:#f0a500;background:#fff8e7}
+.pname{font-weight:800;line-height:1.35;font-size:17px;color:#183b4d;margin-bottom:5px}
+.pmodel{font-size:10px;color:#8a949c;margin-top:2px;line-height:1.2}
+.pbottom{display:flex;justify-content:space-between;align-items:end;margin-top:9px}
+.price{font-weight:700;color:#11698a;font-size:16px}
+.badge{font-size:11px;background:#eef3f5;padding:3px 6px;border-radius:5px;color:#58646d}
+/* 桌面版：右側面板盡量填滿可用視窗高度；只有商品清單捲動，結帳區固定於面板底部 */
+.cart{position:sticky;top:12px;height:calc(100vh - 230px);min-height:320px;display:flex;flex-direction:column;min-width:0;overflow:hidden;align-self:start}
+.cart h2{flex:0 0 auto;font-size:18px;margin:0 0 10px}
+.cart-list{flex:1 1 auto;min-height:0;max-height:none;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;border-top:1px solid #eee;border-bottom:1px solid #eee}
+.totalbox,.card-no-label,.card-no,.cart .confirm,.cart .clear{flex-shrink:0}
+.cart-item{padding:10px 0;border-bottom:1px solid #cfd5da}
+.cart-check{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;line-height:1.4;min-width:0}
+.cart-check label{display:block;flex:1;min-width:0;text-align:right;cursor:pointer}
+.cart-name{font-weight:700;font-size:14px}
+.qty-badge{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:5px;background:#fff0cc;color:#785200;font-size:12px;font-weight:700}
+.qty-controls{display:flex;align-items:center;gap:7px;margin-top:8px;flex-wrap:wrap}
+.qty-btn{width:28px;height:28px;border:1px solid #c8d2d8;border-radius:6px;background:#fff;color:#34404a;font-size:18px;line-height:1;cursor:pointer}
+.qty-value{min-width:22px;text-align:center;font-weight:800;color:#183b4d}
+.cart-check input{width:17px;height:17px;flex:none;margin:1px 0 0;accent-color:#0d7b51;cursor:pointer}
+.check-progress{font-size:12px;color:#68727b;margin-top:4px}
+.confirm:disabled{opacity:.5;cursor:not-allowed}
+.cart-sub{display:flex;justify-content:space-between;margin-top:5px;font-size:13px;color:#69727b}
+.remove{border:0;background:none;color:#b33a3a;cursor:pointer}
+.totalbox{padding:14px 0}
+.total-label{font-size:14px;color:#68727b}
+.total{font-size:30px;font-weight:800;color:#11698a}
+.card-no-label{font-size:14px;font-weight:700;color:#4d5962;margin-top:5px;margin-bottom:5px}
+.card-no{width:100%;padding:11px 12px;border:2px solid #c7cdd2;border-radius:8px;font-size:16px;margin-bottom:9px}
+.card-no:focus{outline:none;border-color:#11698a}
+.confirm{width:100%;padding:13px;border:0;border-radius:8px;background:#0d7b51;color:#fff;font-size:17px;font-weight:700;cursor:pointer}
+.clear{width:100%;margin-top:8px;padding:10px;border:1px solid #ccc;background:#fff;border-radius:8px;cursor:pointer}
+.details{margin-top:14px}
+.detail-list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.detail-card{border:1px solid #d9e0e4;border-radius:10px;background:#fff;overflow:hidden}
+/* 明細展開時加粗外框，提升辨識度 */
+.detail-card:not(.collapsed){border:3px solid #1685a5;box-shadow:0 0 0 2px #1685a51c}
+body.dark .detail-card:not(.collapsed){border-color:#75c9e8;box-shadow:0 0 0 2px #75c9e81c}
+.detail-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 15px;background:#f1f7f9;border-bottom:1px solid #dce7ea;cursor:pointer;user-select:none}
+.detail-toggle{width:28px;height:28px;border:1px solid #c9d6dc;border-radius:7px;background:#fff;color:#35515e;font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+.detail-head-left{display:flex;align-items:center;gap:8px;min-width:0}
+.detail-meta{min-width:0;display:flex;flex-direction:column;gap:3px}
+.detail-card.collapsed .detail-head{border-bottom:0}
+.detail-card.collapsed .detail-toggle{transform:rotate(0deg)}
+.detail-toggle{transform:rotate(90deg);transition:transform .15s ease}
+.detail-body{display:block}
+.detail-card.collapsed .detail-body{display:none}
+.detail-flow{font-weight:800;color:#183b4d;font-size:16px}
+.detail-total{font-size:20px;font-weight:800;color:#0d7b51}
+.detail-products{padding:4px 15px}
+.detail-item{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #edf0f2}
+.detail-item:last-child{border-bottom:0}
+.detail-name{font-weight:700;color:#26343d;font-size:14px}
+.detail-model{font-size:10px;color:#8a949c;margin-top:3px}
+.detail-price{text-align:right;font-weight:700;color:#11698a}
+.detail-foot{display:flex;justify-content:flex-end;padding:8px 15px 12px;font-size:13px;color:#68727b}
+.empty{padding:35px;text-align:center;color:#8a9299}
+.export-note{font-size:13px;color:#68727b}
+
+/* 開燈／關燈主題 */
+body{transition:background-color .2s ease,color .2s ease}
+.invalid-field{border:2px solid #d92d3e!important;background:#fff1f2!important;box-shadow:0 0 0 3px #d92d3e20!important}
+.buyer-field .invalid-label,.card-no-label.invalid-label{color:#c52233!important}
+.cart-item.invalid{border:2px solid #d92d3e;border-radius:8px;padding:9px;background:#fff1f2}
+.cart-item.invalid .cart-check input{outline:3px solid #d92d3e;outline-offset:2px}
+.validation-hint{color:#c52233;font-size:12px;font-weight:700;margin-top:5px}
+.inline-notice,.inline-confirm{margin:0 0 12px;padding:10px 13px;border:2px solid #d92d3e;border-radius:8px;background:#fff1f2;color:#a51f2d;font-weight:700}
+.inline-notice[hidden],.inline-confirm[hidden]{display:none}
+.inline-notice.success{border-color:#16845b;background:#eaf8f1;color:#116344}
+.inline-confirm{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.inline-confirm span{flex:1;min-width:180px}
+body.dark .inline-notice,body.dark .inline-confirm{background:#49252b;color:#ffdce0;border-color:#d92d3e}
+body.dark .inline-notice.success{background:#183b30;color:#baf4d9;border-color:#16845b}
+body.dark{background:#11151b;color:#e7edf2}
+body.dark .topbar,body.dark .panel,body.dark .product,body.dark .detail-card{background:#1c232c;color:#e7edf2;box-shadow:0 2px 10px #0005}
+body.dark .buyer-field label,body.dark .card-no-label{color:#c3ced8}
+body.dark .buyer-input,body.dark .flow,body.dark .search,body.dark .card-no{background:#151b22;color:#f1f5f8;border-color:#4b5968}
+body.dark .buyer-input::placeholder,body.dark .search::placeholder,body.dark .card-no::placeholder{color:#8997a5}
+body.dark .panel h2,body.dark h1{color:#f1f5f8}
+body.dark .categories .cat{background:#29333f;color:#dce5ed;border-color:#465361}
+body.dark .categories .cat.active{background:#167b9e;color:#fff;border-color:#167b9e}
+body.dark .price,body.dark .total,body.dark .detail-price{color:#72c9e8}
+body.dark .pname,body.dark .detail-name,body.dark .detail-flow{color:#e3edf4}
+body.dark .stats,body.dark .pmodel,body.dark .cart-sub,body.dark .total-label,body.dark .check-progress,body.dark .export-note,body.dark .detail-model,body.dark .detail-foot{color:#aab7c3}
+body.dark .product{border-color:#394653}
+body.dark .product.selected{background:#3a3020;border-color:#d5a32d}
+body.dark .badge{background:#303c48;color:#d5e0e9}
+body.dark .cart-list{border-color:#3c4651}
+body.dark .cart-item{border-color:#46515d}
+body.dark .qty-btn,body.dark .clear,body.dark .detail-toggle{background:#28323d;color:#e6edf3;border-color:#536171}
+body.dark .detail-head{background:#253744;border-color:#3a505e}
+body.dark .detail-item{border-color:#39434d}
+body.dark .empty{color:#9aa8b4}
+body.dark .invalid-field{background:#49252b!important;color:#fff!important}
+body.dark .cart-item.invalid{background:#49252b}
+/* 付款完成 HTML5 動畫視窗 */
+.success-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:#10182099;z-index:9999;opacity:0;visibility:hidden;transition:opacity .2s ease,visibility .2s ease}
+.setup-overlay{z-index:10000;background:#101820bb}
+.setup-modal{width:min(420px,100%)}
+.setup-modal p{margin-bottom:18px;line-height:1.6}
+.setup-label{display:block;text-align:left;font-weight:700;font-size:14px;margin:0 0 6px;color:#4d5962}
+.setup-modal .buyer-input{margin-bottom:10px}
+.setup-submit{margin-top:14px}
+body.dark .setup-label{color:#c3ced8}
+.success-overlay.show{opacity:1;visibility:visible}
+.success-modal{width:min(360px,100%);padding:30px 26px 24px;border-radius:18px;background:#fff;color:#24313a;text-align:center;box-shadow:0 24px 80px #0005;transform:translateY(14px) scale(.94);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.success-overlay.show .success-modal{transform:translateY(0) scale(1)}
+.success-icon{width:66px;height:66px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;background:#e2f7eb;color:#11834d;font-size:38px;font-weight:800;animation:successPop .45s ease both}
+.success-modal h2{margin:0 0 8px;font-size:24px;color:#183b4d}
+.success-modal p{margin:0;color:#66737d;font-size:15px}
+.success-progress{height:4px;background:#e8edf0;border-radius:10px;overflow:hidden;margin-top:22px}
+.success-progress span{display:block;width:100%;height:100%;background:#16a765;transform-origin:left;animation:successCountdown 3s linear forwards}
+body.dark .success-modal{background:#202a34;color:#eef4f8}
+body.dark .success-modal h2{color:#eef4f8}
+body.dark .success-modal p{color:#b7c3cd}
+body.dark .success-progress{background:#3a4652}
+@keyframes successPop{0%{transform:scale(.55);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+@keyframes successCountdown{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+
+/* RWD：保留原有視覺風格，依螢幕寬度調整欄位與間距 */
+@media(max-width:1100px){
+  .grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .layout{grid-template-columns:minmax(0,1fr) 310px}
+}
+@media(max-width:900px){
+  .app{padding:12px}
+  .layout{grid-template-columns:minmax(0,1fr)}
+  .cart{position:static;height:auto;display:block;min-height:0;overflow:visible}
+  .cart-list{display:block;flex:initial;min-height:0;max-height:460px}
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .search{min-width:220px}
+}
+@media(max-width:600px){
+  .app{padding:8px}
+  .topbar,.panel{padding:12px;border-radius:10px}
+  .topline{gap:8px}
+  .buyer-fields{grid-template-columns:minmax(0,1fr);gap:9px}
+  h1{font-size:20px;margin:0;width:100%}
+  .search{flex:1 1 100%;min-width:0;width:100%;font-size:16px;padding:11px 12px}
+  .topline .btn{flex:1 1 calc(50% - 8px);padding:10px 8px;font-size:14px;white-space:nowrap}
+  .layout{gap:10px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .product{min-width:0;min-height:108px;padding:9px;border-radius:8px}
+  .pname{font-size:14px;overflow-wrap:anywhere}
+  .pmodel{font-size:10px;overflow-wrap:anywhere}
+  .pbottom{gap:5px;align-items:flex-start;flex-direction:column}
+  .price{font-size:15px}
+  .badge{max-width:100%;overflow-wrap:anywhere}
+  .categories{gap:6px;margin:10px 0}
+  .cat{padding:7px 11px;font-size:13px}
+  .stats{line-height:1.6}
+  .cart h2{font-size:17px}
+  .cart-list{max-height:42vh;max-height:min(42vh,360px)}
+  .cart-name{font-size:14px;overflow-wrap:anywhere}
+  .cart-sub{gap:8px;align-items:flex-start;flex-wrap:wrap;font-size:12px}
+  .total{font-size:28px}
+  .card-no{font-size:16px}
+  .details{margin-top:10px}
+  .export-note{font-size:12px;line-height:1.5}
+  .order-lock-notice{margin:10px 0;padding:12px 14px;border:1px solid #d97706;border-radius:10px;background:#fff7ed;color:#9a3412;font-weight:700}
+  body.dark .order-lock-notice{background:#3a2918;border-color:#b7791f;color:#ffdda3}
+  button:disabled,input:disabled{opacity:.48;cursor:not-allowed!important}
+  .detail-head{align-items:flex-start;flex-direction:column;padding:10px;gap:8px}
+  .detail-flow{font-size:14px;overflow-wrap:anywhere}
+  .detail-total{font-size:18px}
+  .detail-products{padding:4px 10px}
+  .detail-item{grid-template-columns:minmax(0,1fr) auto;gap:8px}
+  .detail-name{font-size:13px;overflow-wrap:anywhere}
+  .detail-price{font-size:13px;white-space:nowrap}
+  .detail-foot{padding:8px 10px 10px}
+}
+@media(max-width:360px){
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .product{padding:7px}
+  .pname{font-size:13px}
+  .topline .btn{font-size:13px}
+  .detail-item{grid-template-columns:minmax(0,1fr)}
+  .detail-price{text-align:left}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="inlineNotice" class="inline-notice" role="status" aria-live="polite" hidden></div>
+  <div id="inlineConfirm" class="inline-confirm" hidden><span id="inlineConfirmText"></span><button type="button" class="btn btn-danger" id="inlineConfirmYes">確定</button><button type="button" class="btn btn-dark" id="inlineConfirmNo">取消</button></div>
+  <div class="topbar">
+    <div class="topline">
+      <div id="currentOrderSerial" class="order-serial" aria-live="polite">流水號：待設定</div>
+      <h1>商品快速結帳</h1>
+      <button id="newOrderBtn" class="btn btn-main" type="button" onclick="newOrder()">＋ 新訂單</button>
+      <button id="themeToggle" class="btn btn-dark" type="button" onclick="toggleTheme()">🌙 關燈</button>
+      <input id="search" class="search" placeholder="🔍 搜尋商品名稱／型號／類別..." oninput="renderProducts()">
+      <button class="btn btn-dark" onclick="document.getElementById('excelFile').click()">匯入 Excel</button>
+      <input id="excelFile" type="file" accept=".xlsx,.xls,.csv" hidden>
+      <button class="btn btn-dark" onclick="exportDetails()">匯出明細</button>
+    </div>
+    <div class="buyer-fields" aria-label="訂購者資料">
+      <div class="buyer-field">
+        <label for="buyerName">訂購者姓名</label>
+        <input id="buyerName" class="buyer-input" type="text" placeholder="請輸入訂購者姓名（選填）" autocomplete="name">
+      </div>
+      <div class="buyer-field">
+        <label for="buyerPhone">訂購者電話</label>
+        <input id="buyerPhone" class="buyer-input" type="tel" placeholder="請輸入訂購者電話（選填）" autocomplete="tel">
+      </div>
+      <div class="buyer-field">
+        <label for="buyerEmail">訂購者 Email（必填）</label>
+        <input id="buyerEmail" class="buyer-input" type="email" placeholder="請輸入訂購者 Email" autocomplete="email" required>
+        <label class="line-invoice-option" for="lineInvoice"><input id="lineInvoice" type="checkbox"> 使用 LINE 接收發票</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <main class="panel">
+      <div class="stats">目前商品：<b id="count"></b>　｜　顯示：<b id="shown"></b></div>
+      <div id="categories" class="categories"></div>
+      <div id="orderLockNotice" class="order-lock-notice" hidden>本筆訂單已完成，請按上方「＋ 新訂單」後再開始下一筆作業。</div>
+      <div id="products" class="grid"></div>
+    </main>
+
+    <aside class="panel cart">
+      <h2>🛒 本次已選商品</h2>
+      <div id="cartList" class="cart-list"></div>
+      <div class="totalbox">
+        <div class="total-label">已選 <span id="selectedCount">0</span> 項／共 <span id="selectedQtyCount">0</span> 件</div>
+        <div class="total">$<span id="currentTotal">0</span></div>
+      </div>
+      <div class="card-no-label">結帳序號 (6位 調閱編號 )</div>
+      <input id="flowNo" class="card-no" placeholder="請輸入結帳序號">
+      <button class="confirm" onclick="confirmSelection()">✓ 付款完成</button>
+      <button class="clear" onclick="clearCart()">清除本次選擇</button>
+    </aside>
+  </div>
+
+  <section class="panel details">
+    <div class="topline" style="justify-content:space-between">
+      <h2 style="margin:0">明細紀錄</h2>
+      <span class="export-note">依結帳序號整理，每筆顯示流水號、商品名稱、型號、數量、金額與總金額；支援裝置可直接分享 Excel，並保留本機下載</span>
+    </div>
+    <div id="detailList" class="detail-list">
+      <div class="empty">尚未有付款明細</div>
+    </div>
+  </section>
+</div>
+
+<div id="operatorSetupOverlay" class="success-overlay setup-overlay" role="dialog" aria-modal="true" aria-labelledby="operatorSetupTitle" aria-hidden="false">
+  <form id="operatorSetupForm" class="success-modal setup-modal">
+    <div class="success-icon" aria-hidden="true">✓</div>
+    <h2 id="operatorSetupTitle">首次使用設定</h2>
+    <p>請先輸入操作人員名字或代號，作為本機訂單流水號識別。</p>
+    <label for="operatorName" class="setup-label">操作人員名字／代號</label>
+    <input id="operatorName" class="buyer-input" type="text" maxlength="24" placeholder="可輸入中文、英文或數字" autocomplete="off">
+    <div id="operatorSetupError" class="validation-hint" role="alert"></div>
+    <button class="confirm setup-submit" type="submit">開始使用</button>
+  </form>
+</div>
+
+<div id="paymentModal" class="success-overlay" role="dialog" aria-modal="true" aria-labelledby="successTitle" aria-hidden="true">
+  <div class="success-modal">
+    <div class="success-icon" aria-hidden="true">✓</div>
+    <h2 id="successTitle">付款完成</h2>
+    <p>交易明細已成功記錄</p>
+    <div class="success-progress"><span></span></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script>
+let products = [{"id": "1", "category": "包包類", "name": "鴻海50周年紀念款_HHTD24活動限定帆布包", "model": "HH-TD24", "price": 2480.0}, {"id": "2", "category": "電巴盒", "name": "MODEL T_鴻海電巴造型收納盒", "model": "HH-BUS", "price": 980.0}, {"id": "3", "category": "悠遊卡", "name": "黑金龍吟_鴻海50周年紀念悠遊卡（5入)", "model": "HH-TD50", "price": 2400.0}, {"id": "4", "category": "筆類", "name": "鴻海經典鋼珠筆禮盒(沉穩黑)", "model": "HH-PEN-B", "price": 620.0}, {"id": "5", "category": "筆類", "name": "鴻海經典鋼珠筆禮盒(典雅銀)", "model": "HH-PEN-S", "price": 620.0}, {"id": "6", "category": "筆類", "name": "鴻海隨行筆三入組（紅藍白）(New) (5入）", "model": "HH-PEN-R", "price": 725.0}, {"id": "7", "category": "筆類", "name": "鴻海隨行筆三入組（粉綠黃）(New) (5入)", "model": "HH-PEN-P", "price": 725.0}, {"id": "8", "category": "衣服", "name": "鴻海美式復古鋪棉外套(石墨黑) -S", "model": "HH-CT-S", "price": 3620.0}, {"id": "9", "category": "衣服", "name": "鴻海美式復古鋪棉外套(石墨黑) -M", "model": "HH-CT-M", "price": 3620.0}, {"id": "10", "category": "衣服", "name": "鴻海美式復古鋪棉外套(石墨黑)-L", "model": "HH-CT-L", "price": 3620.0}, {"id": "11", "category": "衣服", "name": "鴻海美式復古鋪棉外套(石墨黑)-XL", "model": "HH-CT-XL", "price": 3620.0}, {"id": "12", "category": "衣服", "name": "鴻海美式復古鋪棉外套(石墨黑)-2XL", "model": "HH-CT-2XL", "price": 3620.0}, {"id": "13", "category": "衣服", "name": "鴻海涼感漸層排汗衣(天空藍) - S", "model": "HH-ST-B-S", "price": 1580.0}, {"id": "14", "category": "衣服", "name": "鴻海涼感漸層排汗衣(天空藍) - M", "model": "HH-ST-B-M", "price": 1580.0}, {"id": "15", "category": "衣服", "name": "鴻海涼感漸層排汗衣(天空藍) - L", "model": "HH-ST-B-L", "price": 1580.0}, {"id": "16", "category": "衣服", "name": "鴻海涼感漸層排汗衣(天空藍) -XL", "model": "HH-ST-B-XL", "price": 1580.0}, {"id": "17", "category": "衣服", "name": "鴻海涼感漸層排汗衣(天空藍) - 2XL", "model": "HH-ST-B-2XL", "price": 1580.0}, {"id": "18", "category": "衣服", "name": "鴻海快乾網眼排汗衣(迷霧灰) - S", "model": "HH-ST-G-S", "price": 1580.0}, {"id": "19", "category": "衣服", "name": "鴻海快乾網眼排汗衣(迷霧灰) - M", "model": "HH-ST-G-M", "price": 1580.0}, {"id": "20", "category": "衣服", "name": "鴻海快乾網眼排汗衣(迷霧灰) - L", "model": "HH-ST-G-L", "price": 1580.0}, {"id": "21", "category": "衣服", "name": "鴻海快乾網眼排汗衣(迷霧灰) - XL", "model": "HH-ST-G-XL", "price": 1580.0}, {"id": "22", "category": "衣服", "name": "鴻海快乾網眼排汗衣(迷霧灰) - 2XL", "model": "HH-ST-G-2XL", "price": 1580.0}, {"id": "23", "category": "衣服", "name": "鴻海質感燙金POLO衫(曜石黑) - S", "model": "HH-PL-B-S", "price": 1480.0}, {"id": "24", "category": "衣服", "name": "鴻海質感燙金POLO衫(曜石黑) -M", "model": "HH-PL-B-M", "price": 1480.0}, {"id": "25", "category": "衣服", "name": "鴻海質感燙金POLO衫(曜石黑) -L", "model": "HH-PL-B-L", "price": 1480.0}, {"id": "26", "category": "衣服", "name": "鴻海質感燙金POLO衫(曜石黑) -XL", "model": "HH-PL-B-XL", "price": 1480.0}, {"id": "27", "category": "衣服", "name": "鴻海質感燙金POLO衫(曜石黑) - 2XL", "model": "HH-PL-B-2XL", "price": 1480.0}, {"id": "28", "category": "配件", "name": "鴻海經典棒球帽（白）(New)", "model": "HH-HAT-W", "price": 1280.0}, {"id": "29", "category": "配件", "name": "鴻海經典棒球帽（卡其）(New)", "model": "HH-HAT-B", "price": 1280.0}, {"id": "30", "category": "配件", "name": "鴻飛純絲方巾", "model": "HH-SCARF", "price": 3980.0}, {"id": "31", "category": "配件", "name": "鴻海3+3+3圖騰領帶", "model": "HH-TIE", "price": 1580.0}, {"id": "32", "category": "其他", "name": "鴻海旅行盥洗包", "model": "HH-WASH", "price": 1280.0}, {"id": "33", "category": "其他", "name": "鴻海鈦輕瓶 (New)", "model": "HH-TIE-BOT", "price": 2180.0}, {"id": "34", "category": "其他", "name": "鴻海鈦餐具", "model": "HH-TIE-SET", "price": 2180.0}, {"id": "35", "category": "外套", "name": "鴻海飛行外套(曜石黑) - S", "model": "HH-FLY-B-S", "price": 3680.0}, {"id": "36", "category": "外套", "name": "鴻海飛行外套(曜石黑) -M", "model": "HH-FLY-B-M", "price": 3680.0}, {"id": "37", "category": "外套", "name": "鴻海飛行外套(曜石黑) -L", "model": "HH-FLY-B-L", "price": 3680.0}, {"id": "38", "category": "外套", "name": "鴻海飛行外套(曜石黑) -XL", "model": "HH-FLY-B-XL", "price": 3680.0}, {"id": "39", "category": "外套", "name": "鴻海飛行外套(曜石黑) - 2XL", "model": "HH-FLY-B-2XL", "price": 3680.0}, {"id": "40", "category": "外套", "name": "鴻海飛行外套(曜石黑) - 3XL", "model": "HH-FLY-B-3XL", "price": 3680.0}, {"id": "41", "category": "服飾", "name": "鴻海透氣機能POLO衫(深藍) - L", "model": "HH-041", "price": 3680.0}, {"id": "42", "category": "服飾", "name": "鴻海透氣機能POLO衫(深藍) - XL", "model": "HH-042", "price": 3680.0}, {"id": "43", "category": "服飾", "name": "鴻海透氣機能POLO衫(深藍) - 2XL", "model": "HH-043", "price": 3680.0}, {"id": "44", "category": "服飾", "name": "鴻海科技日紀念POLO衫 - S", "model": "HH-044", "price": 3680.0}, {"id": "45", "category": "服飾", "name": "鴻海科技日紀念POLO衫 - M", "model": "HH-045", "price": 3680.0}, {"id": "46", "category": "服飾", "name": "鴻海科技日紀念POLO衫 - L", "model": "HH-046", "price": 3680.0}, {"id": "47", "category": "服飾", "name": "鴻海科技日紀念POLO衫 - XL", "model": "HH-047", "price": 3680.0}, {"id": "48", "category": "服飾", "name": "鴻海科技日紀念POLO衫 - 2XL", "model": "HH-048", "price": 3680.0}, {"id": "49", "category": "配件", "name": "鴻海棒球帽(藍)", "model": "HH-053", "price": 3680.0}, {"id": "50", "category": "配件", "name": "鴻海棒球帽(卡其)", "model": "HH-054", "price": 3680.0}, {"id": "51", "category": "配件", "name": "鴻海棒球帽 (煙花刺繡)", "model": "HH-055", "price": 3680.0}, {"id": "52", "category": "配件", "name": "鴻海棒球帽(桐花刺繡)", "model": "HH-056", "price": 3680.0}, {"id": "53", "category": "配件", "name": "鴻海休閒帽(卡其)", "model": "HH-057", "price": 3680.0}, {"id": "54", "category": "配件", "name": "鴻海休閒帽(黑)", "model": "HH-058", "price": 3680.0}, {"id": "55", "category": "配件", "name": "鴻海經典圍巾(黑)", "model": "HH-059", "price": 3980.0}, {"id": "56", "category": "配件", "name": "鴻海經典圍巾(棕)", "model": "HH-060", "price": 3980.0}, {"id": "57", "category": "配件", "name": "鴻海經典圍巾(粉)", "model": "HH-061", "price": 3980.0}, {"id": "58", "category": "配件", "name": "鴻海經典圍巾(灰)", "model": "HH-062", "price": 3980.0}, {"id": "59", "category": "文具與生活用品", "name": "鴻海不鏽鋼露營杯", "model": "HH-065", "price": 3000.0}, {"id": "60", "category": "文具與生活用品", "name": "鴻海星光馬克杯(星雲紫)", "model": "HH-066", "price": 3000.0}, {"id": "61", "category": "文具與生活用品", "name": "鴻海星光馬克杯(星雲粉)", "model": "HH-067", "price": 3000.0}, {"id": "62", "category": "文具與生活用品", "name": "鴻海香氛旅行盥洗組", "model": "HH-068", "price": 3000.0}, {"id": "63", "category": "文具與生活用品", "name": "《鴻飛千里・海納百川》紙雕筆記本", "model": "HH-072", "price": 3000.0}, {"id": "64", "category": "文具與生活用品", "name": "鴻海萬用便利貼", "model": "HH-073", "price": 3000.0}, {"id": "65", "category": "文具與生活用品", "name": "鴻海萬用福運紅包袋", "model": "HH-074", "price": 3000.0}, {"id": "66", "category": "文具與生活用品", "name": "鴻海園區立體冰箱貼", "model": "HH-075", "price": 3000.0}, {"id": "67", "category": "文具與生活用品", "name": "鴻海鑰匙扣", "model": "HH-076", "price": 3000.0}];
+const BUILT_IN_PRODUCTS = products.map(p => ({...p}));
+
+let selected = new Set();
+let checkedItems = new Set();
+// 每個商品的購買數量；首次選取為 1，再點同一商品即累加。
+let quantities = Object.create(null);
+let currentCategory = "全部";
+let validationAttempted = false;
+let successModalTimer = null;
+const THEME_KEY = "honghaiQuickCheckoutTheme_v1";
+const STORAGE_KEY = "honghaiQuickCheckoutState_v1";
+const OPERATOR_KEY = "honghaiQuickCheckoutOperator_v1";
+const ORDER_COUNTER_KEY = "honghaiQuickCheckoutOrderCounter_v1";
+let operatorName = "";
+let orderCounter = 1;
+let currentOrderSerial = "";
+// 付款完成後立即解鎖並準備下一筆訂單，無須再按「新訂單」。
+let orderLocked = false;
+
+function downloadBlob(blob,filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+
+
+// 開燈／關燈：保留使用者選擇
+function applyTheme(theme){
+  const dark=theme==="dark";
+  document.body.classList.toggle("dark",dark);
+  $("themeToggle").textContent=dark?"☀️ 開燈":"🌙 關燈";
+  try{localStorage.setItem(THEME_KEY,dark?"dark":"light");}catch(e){}
+}
+function toggleTheme(){applyTheme(document.body.classList.contains("dark")?"light":"dark");}
+function showPaymentSuccess(){
+  const modal=$("paymentModal");
+  if(successModalTimer) clearTimeout(successModalTimer);
+  modal.classList.add("show");modal.setAttribute("aria-hidden","false");
+  successModalTimer=setTimeout(()=>{modal.classList.remove("show");modal.setAttribute("aria-hidden","true");successModalTimer=null;},3000);
+}
+function clearValidation(){
+  clearNotice();
+  ["buyerName","buyerPhone","buyerEmail","lineInvoice","flowNo"].forEach(id=>$(id).classList.remove("invalid-field"));
+  document.querySelectorAll(".buyer-field label,.card-no-label").forEach(el=>el.classList.remove("invalid-label"));
+}
+
+// 自動保存工作狀態：重新整理或意外關閉頁面後可還原
+function saveState(){
+  try{localStorage.setItem(STORAGE_KEY, JSON.stringify({products, selected:[...selected], checkedItems:[...checkedItems], quantities, currentCategory, flowNo:$("flowNo").value, buyerName:$("buyerName").value, buyerPhone:$("buyerPhone").value, buyerEmail:$("buyerEmail").value, lineInvoice:$("lineInvoice").checked, detailRecords, orderCounter, currentOrderSerial, orderLocked}));}
+  catch(err){console.warn("狀態保存失敗",err);}
+}
+function restoreState(){
+  try{
+    const savedTheme=localStorage.getItem(THEME_KEY); if(savedTheme) applyTheme(savedTheme);
+    operatorName=localStorage.getItem(OPERATOR_KEY)||"";
+    const savedCounter=Number(localStorage.getItem(ORDER_COUNTER_KEY));
+    if(Number.isInteger(savedCounter)&&savedCounter>=1) orderCounter=savedCounter;
+    const raw=localStorage.getItem(STORAGE_KEY); if(!raw)return;
+    const state=JSON.parse(raw); if(!state || typeof state!=="object")return;
+    if(Array.isArray(state.products) && state.products.length){
+      // 舊版可能曾把「訂單明細匯入檔」誤當成商品清單保存，造成重新開啟後只剩少數商品。
+      // 以 HTML 內建完整商品主檔為底，再合併已保存的自訂商品／更新資料，避免商品遺失。
+      const merged = BUILT_IN_PRODUCTS.map(p => ({...p}));
+      const byIdentity = new Map();
+      merged.forEach((p,i)=>{
+        byIdentity.set('id:'+String(p.id),i);
+        if(p.model) byIdentity.set('model:'+String(p.model).trim().toLowerCase(),i);
+        if(p.name) byIdentity.set('name:'+String(p.name).trim().toLowerCase(),i);
+      });
+      state.products.forEach(savedProduct=>{
+        if(!savedProduct || !String(savedProduct.name||'').trim()) return;
+        const modelKey=savedProduct.model?'model:'+String(savedProduct.model).trim().toLowerCase():'';
+        const nameKey='name:'+String(savedProduct.name).trim().toLowerCase();
+        const idKey='id:'+String(savedProduct.id);
+        const idx=(modelKey && byIdentity.has(modelKey))?byIdentity.get(modelKey):(byIdentity.has(nameKey)?byIdentity.get(nameKey):-1);
+        if(idx>=0){
+          // 以商品名稱／型號識別內建商品；保存資料若是舊匯入明細中的臨時 ID，不覆蓋主檔 ID。
+          merged[idx]={...merged[idx],category:savedProduct.category||merged[idx].category,name:savedProduct.name||merged[idx].name,model:savedProduct.model||merged[idx].model,price:Number.isFinite(Number(savedProduct.price))?Number(savedProduct.price):merged[idx].price};
+        }else{
+          // 自訂匯入商品即使與內建商品使用相同序號，也保留為獨立商品並配置不衝突的 ID。
+          let candidate=String(savedProduct.id||merged.length+1);
+          const usedIds=new Set(merged.map(p=>String(p.id)));
+          if(usedIds.has(candidate)){
+            let suffix=1; const base=candidate;
+            while(usedIds.has(candidate)){candidate=base+'-自訂'+suffix++;}
+          }
+          const newIdx=merged.length; merged.push({...savedProduct,id:candidate});
+          byIdentity.set('id:'+candidate,newIdx);
+          if(savedProduct.model) byIdentity.set('model:'+String(savedProduct.model).trim().toLowerCase(),newIdx);
+          byIdentity.set(nameKey,newIdx);
+        }
+      });
+      products=merged;
+    }
+    if(Array.isArray(state.selected)) selected=new Set(state.selected.map(String));
+    if(Array.isArray(state.checkedItems)) checkedItems=new Set(state.checkedItems.map(String));
+    if(state.quantities && typeof state.quantities==="object") quantities=state.quantities;
+    if(typeof state.currentCategory==="string") currentCategory=state.currentCategory;
+    if(Array.isArray(state.detailRecords)) detailRecords=state.detailRecords;
+    if(typeof state.flowNo==="string") $("flowNo").value=state.flowNo;
+    if(typeof state.buyerName==="string") $("buyerName").value=state.buyerName;
+    if(typeof state.buyerPhone==="string") $("buyerPhone").value=state.buyerPhone;
+    if(typeof state.buyerEmail==="string") $("buyerEmail").value=state.buyerEmail;
+    if(typeof state.lineInvoice==="boolean") $("lineInvoice").checked=state.lineInvoice;
+    if(Number.isInteger(state.orderCounter)&&state.orderCounter>=1) orderCounter=state.orderCounter;
+    if(typeof state.currentOrderSerial==="string") currentOrderSerial=state.currentOrderSerial;
+    if(typeof state.orderLocked==="boolean") orderLocked=state.orderLocked;
+    // 清除已不存在商品的選取與檢查狀態
+    const valid=new Set(products.map(p=>String(p.id)));
+    selected=new Set([...selected].filter(id=>valid.has(id)));
+    checkedItems=new Set([...checkedItems].filter(id=>selected.has(id)));
+    const validQuantities=Object.create(null);
+    selected.forEach(id=>{const q=Number(quantities[id]);validQuantities[id]=Number.isFinite(q)&&q>=1?Math.floor(q):1;});
+    quantities=validQuantities;
+  }catch(err){console.warn("先前狀態無法還原",err);}
+}
+
+const $ = id => document.getElementById(id);
+let inlineConfirmCallback=null;
+function showNotice(message, success=false){
+  const el=$("inlineNotice"); if(!el)return;
+  el.textContent=String(message||""); el.classList.toggle("success",!!success); el.hidden=!message;
+}
+function clearNotice(){showNotice("");}
+function askInlineConfirm(message, callback){
+  $("inlineConfirmText").textContent=message;
+  $("inlineConfirm").hidden=false; inlineConfirmCallback=callback;
+}
+$("inlineConfirmYes").addEventListener("click",()=>{const cb=inlineConfirmCallback;inlineConfirmCallback=null;$("inlineConfirm").hidden=true;if(cb)cb(true);});
+$("inlineConfirmNo").addEventListener("click",()=>{inlineConfirmCallback=null;$("inlineConfirm").hidden=true;});
+const money = n => Number(n || 0).toLocaleString();
+
+function esc(v){
+  return String(v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+
+function applyOrderLock(){
+  const disabled=!!orderLocked;
+  ["search","buyerName","buyerPhone","buyerEmail","flowNo"].forEach(id=>{if($(id)) $(id).disabled=disabled;});
+  document.querySelectorAll(".confirm,.clear").forEach(el=>el.disabled=disabled);
+  const notice=$("orderLockNotice");
+  if(notice) notice.hidden=!disabled;
+  // 重新產生商品與類別按鈕時，disabled 屬性也會依 orderLocked 同步更新。
+  renderCategories();
+  renderProducts();
+}
+
+function init(){
+  $("count").textContent = products.length;
+  renderCategories();
+  renderProducts();
+  refreshHeader();
+  applyOrderLock();
+  saveState();
+}
+
+function renderCategories(){
+  const cats = ["全部","熱門",...new Set(products.map(p=>p.category))];
+  $("categories").innerHTML = cats.map(c =>
+    `<button class="cat ${c===currentCategory?"active":""}" ${orderLocked?"disabled":""} onclick="selectCategory('${esc(c)}')">${esc(c)}</button>`
+  ).join("");
+}
+
+function selectCategory(c){
+  if(orderLocked) return;
+  currentCategory=c;
+  renderCategories();
+  renderProducts();
+}
+
+function renderProducts(){
+  const q=$("search").value.trim().toLowerCase();
+  let list=products.filter(p=>{
+    const catOk=currentCategory==="全部" || (currentCategory==="熱門" ? Number(p.id)<=10 : p.category===currentCategory);
+    const qOk=!q || [p.name,p.model,p.category].join(" ").toLowerCase().includes(q);
+    return catOk && qOk;
+  });
+  $("shown").textContent=list.length;
+  $("products").innerHTML=list.length ? list.map(p=>`
+    <button class="product ${selected.has(p.id)?"selected":""}" ${orderLocked?"disabled":""} onclick="toggleProduct('${esc(p.id)}')">
+      <div class="pname">${esc(p.name)}</div>
+      <div class="pmodel">${esc(p.model)}</div>
+      <div class="pbottom">
+        <span class="price">$${money(p.price)}</span>
+        <span class="badge">${esc(p.category)}</span>
+      </div>
+      ${selected.has(p.id)?`<span class="qty-badge">購買數量 × ${Number(quantities[p.id]||1)}</span>`:""}
+    </button>`).join("") : `<div class="empty">找不到符合的商品</div>`;
+  renderCart();
+}
+
+// 點選商品卡片：首次加入數量為 1；再次點同一商品，數量自動 +1。
+function toggleProduct(id){
+  if(orderLocked) return;
+  clearNotice();
+  if(selected.has(id)) quantities[id]=Math.max(1,Number(quantities[id]||1)+1);
+  else {selected.add(id);quantities[id]=1;}
+  renderProducts();
+  saveState();
+}
+
+// 購物清單「移除」維持移除整個品項。
+function removeProduct(id){
+  if(orderLocked) return;
+  selected.delete(id); checkedItems.delete(id); delete quantities[id];
+  renderProducts(); saveState();
+}
+function changeQuantity(id,delta){
+  if(orderLocked || !selected.has(id)) return;
+  const next=Number(quantities[id]||1)+delta;
+  if(next<=0){askInlineConfirm("數量將降至 0，是否移除此商品？",yes=>{if(yes)removeProduct(id);});return;}
+  quantities[id]=Math.floor(next); renderProducts(); saveState();
+}
+
+function toggleCheckedItem(id, checked){
+  if(orderLocked) return;
+  clearNotice();
+  if(checked) checkedItems.add(id); else checkedItems.delete(id);
+  renderCart();
+  saveState();
+}
+
+function renderCart(){
+  const list=products.filter(p=>selected.has(p.id));
+  $("selectedCount").textContent=list.length;
+  $("selectedQtyCount").textContent=list.reduce((sum,p)=>sum+Number(quantities[p.id]||1),0);
+  const total=list.reduce((s,p)=>s+Number(p.price)*Number(quantities[p.id]||1),0);
+  $("currentTotal").textContent=money(total);
+
+  const checkedCount=list.filter(p=>checkedItems.has(p.id)).length;
+  $("cartList").innerHTML=list.length ? list.map(p=>`
+    <div class="cart-item ${validationAttempted && !checkedItems.has(p.id)?"invalid":""}">
+      <div class="cart-check">
+        <input type="checkbox" id="check-${esc(p.id)}" ${orderLocked?"disabled":""} ${checkedItems.has(p.id)?"checked":""} onchange="toggleCheckedItem('${esc(p.id)}',this.checked)" aria-label="確認${esc(p.name)}已到齊">
+        <label for="check-${esc(p.id)}"><div class="cart-name">${esc(p.name)}</div><div class="cart-sub"><span>${esc(p.model)}　單價 $${money(p.price)}</span></div></label>
+      </div>
+      <div class="cart-sub"><span>小計 $${money(Number(p.price)*Number(quantities[p.id]||1))}</span></div>
+      <div class="qty-controls" aria-label="調整${esc(p.name)}購買數量">
+        <button class="qty-btn" type="button" ${orderLocked?"disabled":""} onclick="changeQuantity('${esc(p.id)}',-1)" aria-label="減少數量">−</button>
+        <span>數量</span><span class="qty-value">${Number(quantities[p.id]||1)}</span>
+        <button class="qty-btn" type="button" ${orderLocked?"disabled":""} onclick="changeQuantity('${esc(p.id)}',1)" aria-label="增加數量">＋</button>
+        <button class="remove" ${orderLocked?"disabled":""} onclick="removeProduct('${esc(p.id)}')">移除品項</button>
+      </div>
+    </div>`).join("") : `<div class="empty">尚未選擇商品</div>`;
+  if(list.length){
+    const note=document.createElement("div"); note.className="check-progress";
+    note.textContent=`到貨確認：${checkedCount} / ${list.length} 項`;
+    $("cartList").appendChild(note);
+  }
+}
+
+function refreshHeader(){
+  renderDetails();
+}
+
+// 每筆付款明細以「結帳序號」為一組，方便人工確認及日後開發票整理
+let detailRecords = [];
+
+function renderDetails(){
+  const box=$("detailList");
+  if(!detailRecords.length){
+    box.innerHTML='<div class="empty">尚未有付款明細</div>';
+    return;
+  }
+  box.innerHTML=[...detailRecords].map((r,originalIndex)=>({r,originalIndex})).reverse().map(({r,originalIndex})=>`
+    <div class="detail-card collapsed" id="detail-card-${originalIndex}">
+      <div class="detail-head" onclick="toggleDetail(${originalIndex})">
+        <div class="detail-head-left">
+          <button class="detail-toggle" type="button" tabindex="-1" aria-label="展開或縮起明細">›</button>
+          <div class="detail-meta">
+            <div class="detail-flow">結帳序號：${esc(r.flow)}</div>
+            <div class="detail-model">流水號：${esc(r.orderSerial||"（未記錄）")}　訂購者：${esc(r.buyerName||"（未記錄）")}　電話：${esc(r.buyerPhone||"（未記錄）")}</div>
+            <div class="detail-model">Email：${esc(r.buyerEmail||"（未記錄）")}</div>
+          </div>
+        </div>
+        <div class="detail-total">總金額 $${money(r.total)}</div>
+      </div>
+      <div class="detail-body">
+        <div class="detail-products">
+          ${r.items.map(p=>`
+            <div class="detail-item">
+              <div>
+                <div class="detail-name">${esc(p.name)}</div>
+                <div class="detail-model">型號：${esc(p.model)}</div>
+              </div>
+              <div class="detail-price">${Number(p.quantity||1)} × $${money(p.price)}<br>小計 $${money(Number(p.price)*Number(p.quantity||1))}</div>
+            </div>`).join("")}
+        </div>
+        <div class="detail-foot">共 ${r.items.length} 項品項／${r.items.reduce((sum,p)=>sum+Number(p.quantity||1),0)} 件商品</div>
+      </div>
+    </div>`).join("");
+}
+
+function toggleDetail(i){
+  const card=$("detail-card-"+i);
+  if(card) card.classList.toggle("collapsed");
+}
+
+function confirmSelection(){
+  if(orderLocked){showNotice("本筆訂單已完成，請先按「新訂單」再進行下一筆作業。");return;}
+  clearValidation();
+  validationAttempted=true;
+  const buyerName=$("buyerName").value.trim();
+  const buyerPhone=$("buyerPhone").value.trim();
+  const buyerEmail=$("buyerEmail").value.trim();
+  const lineInvoice=$("lineInvoice").checked ? 1 : 0;
+  const flow=$("flowNo").value.trim();
+  const missing=[];
+  if(!buyerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(buyerEmail)){
+    $("buyerEmail").classList.add("invalid-field");$("buyerEmail").previousElementSibling.classList.add("invalid-label");
+    missing.push(!buyerEmail?"訂購者 Email":"訂購者 Email 格式");
+  }
+  if(!flow){$("flowNo").classList.add("invalid-field");$("flowNo").previousElementSibling.classList.add("invalid-label");missing.push("結帳序號");}
+  if(!selected.size){
+    renderCart();
+    showNotice("請至少選擇一項商品，已用紅框標示需要修正的欄位。");
+    if(missing.length) $(missing[0].includes("Email")?"buyerEmail":"flowNo").focus();
+    return;
+  }
+  const unchecked=products.filter(p=>selected.has(String(p.id)) && !checkedItems.has(String(p.id)));
+  renderCart();
+  if(missing.length || unchecked.length){
+    const message=[];
+    if(missing.length) message.push("以下欄位尚未正確填寫，已用紅色標示："+missing.join("、"));
+    if(unchecked.length) message.push("以下商品尚未勾選確認，已用紅框標示："+unchecked.map(p=>p.name).join("、"));
+    showNotice(message.join("；"));
+    const first=missing[0];
+    if(first) $(first.includes("Email")?"buyerEmail":"flowNo").focus();
+    return;
+  }
+  const items=products.filter(p=>selected.has(String(p.id))).map(p=>({
+    id:p.id,name:p.name,model:p.model,price:Number(p.price)||0,quantity:Number(quantities[p.id]||1)
+  }));
+  const total=items.reduce((sum,p)=>sum+p.price*p.quantity,0);
+  // 先將本次付款記錄為目前流水號，再自動遞增，讓下一張訂單號碼立即待用。
+  detailRecords.push({flow,orderSerial:currentOrderSerial,buyerName,buyerPhone,buyerEmail,lineInvoice,total,items});
+  orderCounter=Math.max(1,Number(orderCounter)||1)+1;
+  currentOrderSerial=makeOrderSerial(operatorName,orderCounter);
+  try{localStorage.setItem(ORDER_COUNTER_KEY,String(orderCounter));}catch(e){}
+  updateOrderSerialDisplay();
+  selected.clear();
+  checkedItems.clear();
+  quantities=Object.create(null);
+  validationAttempted=false;
+  $("flowNo").value="";
+  $("buyerName").value="";
+  $("buyerPhone").value="";
+  $("buyerEmail").value="";
+  $("lineInvoice").checked=false;
+  clearValidation();
+  renderProducts();
+  renderDetails();
+  saveState();
+  // 付款成功後直接準備下一筆待用訂單，不必再按「新訂單」。
+  orderLocked=false;
+  applyOrderLock();
+  saveState();
+  showPaymentSuccess();
+}
+
+// 新訂單只重置「本次訂單」與畫面篩選，不更動歷史付款紀錄或商品資料。
+function newOrder(){
+  // 僅付款成功才遞增流水號；按「新訂單」不會建立空單，也不會跳號。
+  orderLocked=false;
+  if(!currentOrderSerial) currentOrderSerial=makeOrderSerial(operatorName,orderCounter);
+  selected.clear();
+  checkedItems.clear();
+  quantities=Object.create(null);
+  validationAttempted=false;
+  currentCategory="全部";
+  $("search").value="";
+  $("flowNo").value="";
+  $("buyerName").value="";
+  $("buyerPhone").value="";
+  $("buyerEmail").value="";
+  $("lineInvoice").checked=false;
+  clearValidation();
+  updateOrderSerialDisplay();
+  renderCategories();
+  renderProducts();
+  renderDetails();
+  applyOrderLock();
+  saveState();
+}
+
+function clearCart(){
+  if(orderLocked){showNotice("本筆訂單已完成，請先按「新訂單」再進行下一筆作業。");return;}
+  if(!selected.size && !$("flowNo").value.trim()) return;
+  askInlineConfirm("確定清除本次已選商品與到貨勾選？結帳序號欄位會保留。",yes=>{if(!yes)return;selected.clear();checkedItems.clear();quantities=Object.create(null);renderProducts();saveState();});
+}
+
+async function exportDetails(){
+  if(!detailRecords.length){showNotice("目前沒有明細可以匯出。");return;}
+
+  // 一個商品一列；同一訂單的結帳序號、流水號、姓名、電話、Email 與總金額縱向合併。
+  const rows=[];
+  const mergeGroups=[];
+  let excelRow=2; // 第 1 列為標題
+  detailRecords.forEach(r=>{
+    const items=Array.isArray(r.items)?r.items:[];
+    if(!items.length) return;
+    const firstRow=excelRow;
+    items.forEach(p=>{
+      rows.push({
+        "結帳序號 (6位 調閱編號 )":r.flow,
+        "流水號":r.orderSerial||"",
+        "訂購者姓名":r.buyerName||"",
+        "訂購者電話":r.buyerPhone||"",
+        "訂購者 Email":r.buyerEmail||"",
+        "line接收發票":Number(r.lineInvoice||0)===1?1:0,
+        "商品名稱":p.name,
+        "商品型號":p.model,
+        "單價":p.price,
+        "數量":Number(p.quantity||1),
+        "小計":p.price*Number(p.quantity||1),
+        "總金額":r.total
+      });
+      excelRow++;
+    });
+    if(items.length>1){
+      const lastRow=excelRow-1;
+      // A:結帳序號、B:流水號、C:姓名、D:電話、E:Email、K:總金額
+      [0,1,2,3,4,5,11].forEach(c=>mergeGroups.push({s:{r:firstRow-1,c},e:{r:lastRow-1,c}}));
+    }
+  });
+  if(!rows.length){showNotice("目前沒有可匯出的商品明細。");return;}
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws["!merges"]=mergeGroups;
+  ws["!cols"]=[{wch:18},{wch:18},{wch:18},{wch:18},{wch:28},{wch:14},{wch:42},{wch:18},{wch:12},{wch:8},{wch:12},{wch:16}];
+  // Excel 儲存格水平對齊：文字置中；數字欄位靠左。標題列同樣套用置中。
+  const textCols=[0,1,2,3,4,6,7];
+  const numberCols=[8,9,10,11];
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  for(let R=range.s.r;R<=range.e.r;R++){
+    for(let C=range.s.c;C<=range.e.c;C++){
+      const addr=XLSX.utils.encode_cell({r:R,c:C});
+      if(!ws[addr]) continue;
+      const isNumber=R>0 && numberCols.includes(C);
+      ws[addr].s={alignment:{horizontal:isNumber?'right':'center',vertical:'center'}};
+    }
+  }
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"發票明細");
+
+  const stamp=new Date();
+  const pad=n=>String(n).padStart(2,"0");
+  const filename="商品發票明細_"+stamp.getFullYear()+pad(stamp.getMonth()+1)+pad(stamp.getDate())+"_"+pad(stamp.getHours())+pad(stamp.getMinutes())+pad(stamp.getSeconds())+".xlsx";
+  const bytes=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+  const mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  const blob=new Blob([bytes],{type:mime});
+  // 僅匯出並下載 Excel，不提供郵件寄送或開啟郵件草稿功能。
+  downloadBlob(blob,filename);
+  showNotice("Excel 明細已下載至本機："+filename,true);
+}
+
+$("excelFile").addEventListener("change",e=>{
+  const file=e.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=evt=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(evt.target.result),{type:"array"});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:"",raw:false});
+      if(!rows.length){showNotice("Excel 沒有資料，請確認檔案內容。");return;}
+      const key=(row,names)=>Object.keys(row).find(k=>names.includes(String(k).trim()));
+      const r=rows[0];
+      const nameK=key(r,["商品名稱","商品名","名稱"]);
+      const priceK=key(r,["單價","商品價格","價格","售價"]);
+      const modelK=key(r,["商品型號","型號","Model","model"]);
+      const catK=key(r,["類別","分類","商品分類"]);
+      const flowK=key(r,["結帳序號 (6位 調閱編號 )","結帳序號"]), serialK=key(r,["流水號"]);
+      const buyerNameK=key(r,["訂購者姓名"]), buyerPhoneK=key(r,["訂購者電話"]), buyerEmailK=key(r,["訂購者 Email","訂購者Email","Email"]), lineInvoiceK=key(r,["line接收發票","LINE接收發票","Line接收發票"]);
+      const totalK=key(r,["總金額"]), qtyK=key(r,["數量"]);
+      // 若匯入的是「匯出明細」格式，先還原每一筆訂單與其全部品項，再同步載入商品清單。
+      if(flowK && nameK && modelK && priceK && totalK){
+        const imported=[];
+        const groups=new Map();
+        let lastFlow="", lastSerial="", lastBuyerName="", lastBuyerPhone="", lastBuyerEmail="", lastTotal="";
+        rows.forEach((row,i)=>{
+          // 新訂單以結帳序號／流水號／總金額任一欄位有值作為分組起點；每組內才補合併儲存格。
+          const newGroup = [flowK,serialK,totalK].some(k=>k && String(row[k]??"").trim()!=="");
+          if(newGroup){lastFlow="";lastSerial="";lastBuyerName="";lastBuyerPhone="";lastBuyerEmail="";lastTotal="";}
+          if(String(row[flowK]??"").trim()) lastFlow=String(row[flowK]).trim(); else if(lastFlow) row[flowK]=lastFlow;
+          if(serialK){if(String(row[serialK]??"").trim()) lastSerial=String(row[serialK]).trim(); else if(lastSerial) row[serialK]=lastSerial;}
+          if(buyerNameK){if(String(row[buyerNameK]??"").trim()) lastBuyerName=String(row[buyerNameK]).trim(); else if(lastBuyerName) row[buyerNameK]=lastBuyerName;}
+          if(buyerPhoneK){if(String(row[buyerPhoneK]??"").trim()) lastBuyerPhone=String(row[buyerPhoneK]).trim(); else if(lastBuyerPhone) row[buyerPhoneK]=lastBuyerPhone;}
+          if(buyerEmailK){if(String(row[buyerEmailK]??"").trim()) lastBuyerEmail=String(row[buyerEmailK]).trim(); else if(lastBuyerEmail) row[buyerEmailK]=lastBuyerEmail;}
+          if(String(row[totalK]??"").trim()) lastTotal=String(row[totalK]).trim(); else if(lastTotal) row[totalK]=lastTotal;
+          const itemName=String(row[nameK]??"").trim();
+          if(!itemName) return;
+          const flow=String(row[flowK]??"").trim();
+          const serial=serialK?String(row[serialK]??"").trim():"";
+          const groupKey=[flow,serial,buyerEmailK?String(row[buyerEmailK]??"").trim():"",String(row[totalK]??"").trim()].join("¦");
+          if(!groups.has(groupKey)){
+            const rec={flow:flow||`匯入${i+1}`,orderSerial:serial,buyerName:buyerNameK?String(row[buyerNameK]??"").trim():"",buyerPhone:buyerPhoneK?String(row[buyerPhoneK]??"").trim():"",buyerEmail:buyerEmailK?String(row[buyerEmailK]??"").trim():"",lineInvoice:lineInvoiceK?(Number(String(row[lineInvoiceK]??"0").trim())===1?1:0):0,total:Number(String(row[totalK]??"").replace(/,/g,""))||0,items:[]};
+            groups.set(groupKey,rec); imported.push(rec);
+          }
+          const quantity=qtyK?(Number(String(row[qtyK]??"1").replace(/,/g,""))||1):1;
+          groups.get(groupKey).items.push({id:String(row["序號"]||`${groups.get(groupKey).items.length+1}`).trim(),name:itemName,model:String(row[modelK]??"").trim(),price:Number(String(row[priceK]??"0").replace(/,/g,""))||0,quantity});
+        });
+        if(!imported.length){showNotice("Excel 明細中沒有可還原的訂單品項。");return;}
+        detailRecords.push(...imported);
+        // 匯入訂單後，下一筆流水號接續匯入資料的最大序號；若沒有可解析的數字，至少接在匯入筆數之後。
+        const importedSerialMax=imported.reduce((max,order)=>{
+          const match=String(order.orderSerial||"").match(/(\d+)\s*$/);
+          return match?Math.max(max,Number(match[1])||0):max;
+        },0);
+        orderCounter=Math.max(1,Number(orderCounter)||1,imported.length+1,importedSerialMax+1);
+        currentOrderSerial=makeOrderSerial(operatorName,orderCounter);
+        try{localStorage.setItem(ORDER_COUNTER_KEY,String(orderCounter));}catch(e){}
+        // 訂單明細匯入只還原歷史交易，不可用「曾被購買的品項」取代完整商品主檔。
+        selected.clear(); checkedItems.clear(); quantities=Object.create(null); currentCategory="全部";
+        init(); renderDetails(); updateOrderSerialDisplay(); saveState(); showNotice(`成功匯入 ${imported.length} 筆訂單、${imported.reduce((n,o)=>n+o.items.length,0)} 項品項；下一筆流水號為 ${currentOrderSerial}。`,true);
+      }else{
+        if(!nameK||!priceK||!modelK){showNotice("Excel 至少需要：商品名稱、商品型號、單價（或舊版商品價格／價格／售價欄位）。");return;}
+        products=rows.filter(row=>String(row[nameK]).trim()).map((row,i)=>({
+          id:String(row["序號"]||i+1).trim(),
+          category:String(catK?row[catK]:"其他").replace(/\n/g,"").trim()||"其他",
+          name:String(row[nameK]).trim(),
+          model:String(row[modelK]).trim(),
+          price:Number(String(row[priceK]).replace(/,/g,""))||0
+        }));
+        selected.clear(); checkedItems.clear(); quantities=Object.create(null); currentCategory="全部";
+        init(); saveState(); showNotice(`成功匯入 ${products.length} 項商品。`,true);
+      }
+    }catch(err){console.error(err);showNotice("Excel 讀取失敗，請確認檔案格式及欄位內容。");}
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+// 結帳序號輸入時即保存，避免 refresh 後遺失
+$("flowNo").addEventListener("input", ()=>{clearNotice();$("flowNo").classList.remove("invalid-field");$("flowNo").previousElementSibling.classList.remove("invalid-label");saveState();});
+const LINE_INVOICE_DEFAULT_EMAIL="kelly.yc.kuo@sharp-world.com.tw";
+$("lineInvoice").addEventListener("change",()=>{
+  if($("lineInvoice").checked){$("buyerEmail").value=LINE_INVOICE_DEFAULT_EMAIL;}
+  else{$("buyerEmail").value="";}
+  $("buyerEmail").classList.remove("invalid-field");
+  $("buyerEmail").previousElementSibling.classList.remove("invalid-label");
+  clearNotice(); saveState();
+});
+["buyerName","buyerPhone","buyerEmail"].forEach(id=>$(id).addEventListener("input", ()=>{
+  clearNotice();$(id).classList.remove("invalid-field");$(id).previousElementSibling.classList.remove("invalid-label");saveState();
+}));
+
+function makeOrderSerial(name,counter){return String(name||"").trim()+String(Math.max(1,Number(counter)||1)).padStart(4,"0");}
+function updateOrderSerialDisplay(){
+  $("currentOrderSerial").textContent="流水號："+(currentOrderSerial||"待設定");
+}
+function openOperatorSetup(){
+  const overlay=$("operatorSetupOverlay");
+  overlay.classList.add("show");
+  overlay.setAttribute("aria-hidden","false");
+  $("operatorName").focus();
+}
+function closeOperatorSetup(){
+  const overlay=$("operatorSetupOverlay");
+  overlay.classList.remove("show");
+  overlay.setAttribute("aria-hidden","true");
+}
+$("operatorSetupForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const name=$("operatorName").value.trim();
+  const error=$("operatorSetupError");
+  if(!name){error.textContent="請輸入操作人員名字或代號。";$("operatorName").classList.add("invalid-field");return;}
+  if(!/^[\p{Script=Han}A-Za-z0-9]+$/u.test(name)){
+    error.textContent="請使用中文、英文字母或數字，不需加入空格或特殊符號。";
+    $("operatorName").classList.add("invalid-field");return;
+  }
+  operatorName=name;
+  try{localStorage.setItem(OPERATOR_KEY,operatorName);}catch(e){}
+  if(!currentOrderSerial) currentOrderSerial=makeOrderSerial(operatorName,orderCounter);
+  try{localStorage.setItem(ORDER_COUNTER_KEY,String(orderCounter));}catch(e){}
+  updateOrderSerialDisplay();
+  saveState();
+  closeOperatorSetup();
+});
+$("operatorName").addEventListener("input",()=>{clearNotice();$("operatorName").classList.remove("invalid-field");$("operatorSetupError").textContent="";});
+
+restoreState();
+if(operatorName){
+  if(!currentOrderSerial) currentOrderSerial=makeOrderSerial(operatorName,orderCounter);
+  // 每次進入工具都直接準備一筆待用訂單；不增加流水號。
+  // 流水號只會在 confirmSelection() 成功完成付款後遞增。
+  orderLocked=false;
+  selected.clear();
+  checkedItems.clear();
+  quantities=Object.create(null);
+  validationAttempted=false;
+  currentCategory="全部";
+  $("search").value="";
+  $("flowNo").value="";
+  $("buyerName").value="";
+  $("buyerPhone").value="";
+  $("buyerEmail").value="";
+  $("lineInvoice").checked=false;
+  clearValidation();
+  updateOrderSerialDisplay();
+  closeOperatorSetup();
+}else{
+  updateOrderSerialDisplay();
+  openOperatorSetup();
+}
+init();
+</script>
+</body>
+</html>
